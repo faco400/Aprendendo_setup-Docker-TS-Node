@@ -133,8 +133,99 @@ O **NODE_PATH** indica para a aplicação construida onde a raiz do projeto se l
 Com tudo isso pronto, a aplicação já está pronta para ser *dockerizada*.
 
 ## Passo 2: Preparando Docker para Desenvolvimento e Produção.
+Para a realização deste passo, é necessário que o Docker já esteja instalado na máquina. Para mais informações acesse <a = href = "https://docs.docker.com/get-docker/">este site</a>
+
+- Agora vamos adicionar um *Dockerfile* ao diretório raiz do nosso projeto e acrescentar o seguinte trecho de código:
+
+```DOCKERFILE
+    FROM node:14 as base
+
+    WORKDIR /home/node/app
+
+    COPY package*.json ./
+
+    RUN npm i
+
+    COPY . .
+```
+O que esse código faz é o seguinte:
+- Conta qual a imagem de container será utilizada. (Ver lista completa de imagens <a href = "https://hub.docker.com/search?type=image">aqui</a>)
+- *Seta* (Define) o nome para o diretorio de trabalho (Pasta para onde o app será copiado).
+- Copia o package.json para a raiz do diretório de trabalho.
+- Instala todas as dependências.
+- Copia todos os arquivos para a raiz do diretório de trabalho.
+
+Opcionalmente para executar o passo de Produção no mesmo arquivo acrescente o seguinte trecho:
+
+```DOCKERFILE
+    FROM base as production
+
+    ENV NODE_PATH=./build
+
+    RUN npm run build
+```
+
+Note que não foi adicionado nenhum comando para executar a build de desenvolvimento ou produção, é para isso que serve o arquivo *docker-compose*.
+
+- Crie a na raiz do diretório o arquivo *docker-compose.yml* e adicione o seguinte:
+```yml
+    version: '3.7'
+
+    services:
+    ts-node-docker:
+        build:
+        context: .
+        dockerfile: Dockerfile
+        target: base
+        volumes:
+        - ./src:/home/node/app/src
+        - ./nodemon.json:/home/node/app/nodemon.json
+        container_name: ts-node-docker
+        expose:
+        - '4000'
+        ports:
+        - '4000:4000'
+        command: npm run dev
+```
+Isso cria um container chamado **ts-node-docker**, executa o *Dockerfile* criado e executa a build (veja o **target**).
+
+Isso também cria *volumes* para o código fonte (src), e nodemon config, o que possibilita o hot-reloading (carregamento rápido). 
+obs: *Hot-reloading* é usado para atualizar apenas o arquivo no qual o código é alterado. 
+
+E finalmente, ele mapeia a porta (port) da máquina para o docker container (deve ser a mesma porta na configuração do *express*).
+
+- Com isso é possível finalmente fazer build da imagem docker com:
+```console
+    docker-compose build
+```
+
+- E finalmente executar o container com o comando:
+```console
+    docker-compose up -d
+```
+**Obs:** *-d* Modo desacoplado: Execute containers no fundo, imprima novos nomes de containers.
+Agora já se tem um container que observa quaisquer mudanças feitas no código fonte TypeScript. Recomenda-se bastante o uso do Docker Desktop app para ver containers em execução.
+
+- É possível parar o container tambem com:
+```console
+    docker-compose down
+```
+
+- Por fim para quem não gosta de ficar digitando todos esses comandos docker. Crie um **Makefile** na raiz do projeto e insira o seguintes comandos para serem executados da linha de comando:
+
+```Makefile
+    up:
+        docker-compose up -d
+    down: 
+        docker-compose down
+```
+
 
 # Referências
 - link: https://dev.to/dariansampare/setting-up-docker-typescript-node-hot-reloading-code-changes-in-a-running-container-2b2f
 
 - video tutorial: https://youtu.be/3o_DEJ9tB5A
+
+- link: https://docs.npmjs.com/cli/v7/configuring-npm/package-json
+
+- link: https://polyester-cormorant-8db.notion.site/Docker-00539f0e67174a848dbd17ca15a83f6e
