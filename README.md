@@ -3,34 +3,34 @@
 ## Para excutar localmente
 - Instale os modulos do projeto com:
 ```console
-    npm i
+npm i
 ```
 - Inicie o servidor Dev:
 ```console
-    npm run dev
+npm run dev
 ```
 - Faça build do projeto:
 ```console
-    npm run build
+npm run build
 ```
 - Execute o projeto:
 ```console
-    npm start
+npm start
 ```
 ## Para executar o Container Docker
 > *É necessario ter o o Docker já instalado.*
 - Faca build da imagem: (necessario apenas na primeira utilização ou caso imagem não esteja presenta na maquina)
 
 ```console
-    docker-compose build
+docker-compose build
 ```
 - Inicie o servidor Dev:
 ```console
-    make up
+make up
 ```
 - Pare o servidor Dev:
 ```console
-    make down
+make down
 ```
 
 Este passo a passo foi elaborado para fins de aprendizado e pode ser usado como template para o setup de projetos que façam uso de docker, typescript, e node.
@@ -40,30 +40,30 @@ Também possível acessar o repositorio do autor <a href = "https://github.com/j
 ## Passo 1: Criar um servidor com Typescript e Express
 - Faça um diretorio para o projeto e entre nele:
 ```console
-    mkdir ts-node-docker
-    cd ts-node-docker
+mkdir ts-node-docker
+cd ts-node-docker
 ```
 
 - Inicialize um projeto node de acordo com suas preferências:
 ```console
-    npm init
+npm init
 ```
 
 - Instale Typescript como uma dependência dev:
 ```console
-    npm i Typescript --save-dev
+npm i Typescript --save-dev
 ```
 
 - Ao término do download crie um arquivo tsconfig.json:
 ```console
-    npx tsc --init
+npx tsc --init
 ```
 - Agora com o tsconfig.json criado na raiz do projeto (root) acrescente as seguintes entradas:
 ```console
-    "baseUrl": "./src"
-    "target": "esnext"
-    "moduleResolution": "node"
-    "outdir": "./build"
+"baseUrl": "./src"
+"target": "esnext"
+"moduleResolution": "node"
+"outdir": "./build"
 ```
 Algumas coisas a se notar:
 O **baseUrl** nos conta onde o nosso codigo fonte (source code) *.ts* está localizado. Ou seja na pasta *./src*.
@@ -76,34 +76,34 @@ O **outdir** conta ao TS aonde colocar o código de Javascript compilado quando 
 
 - Agora instale o <a href = "https://expressjs.com/pt-br/">express</a> e suas tipificações como dependências dev:
 ```console
-    npm i --save express
-    npm i -D @types/express
+npm i --save express
+npm i -D @types/express
 ```
 Agora que o código está pronto para ser executado no servidor. Cria uma pasta *./src* na raiz do projeto e adicione um arquivo *index.ts*
 Dentro do *index.ts* acrescente o seguinte código:
 ```Typescript
-    import express from 'express';
+import express from 'express';
 
-    const app = express();
-    app.listen(4000, () => {
-        console.log(`server running on port 4000`);
-    });
+const app = express();
+app.listen(4000, () => {
+    console.log(`server running on port 4000`);
+});
 ```
 - Para manter o código em execução e observando por mudança utilizamos o <a href = "https://www.npmjs.com/package/nodemon">nodemon</a>.
 Para isso utilizamos o <a href = "https://www.npmjs.com/package/ts-node">ts-node</a> e <a href = "https://www.npmjs.com/package/nodemon">nodemon</a>.
 ```console
-    npm i -D ts-node nodemon
+npm i -D ts-node nodemon
 ```
 Para quem gosta de configurar o nodemon em um arquivo config, é possível criar um arquivo nodemon.json na raiz do projeto. Para este template foram utilizadas as seguintes opções:
 ```JSON
-    {
-        "verbose": true,
-        "ignore": [],
-        "watch": ["src/**/*.ts"],
-        "execMap": {
-            "ts": "node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register"
-        }
+{
+    "verbose": true,
+    "ignore": [],
+    "watch": ["src/**/*.ts"],
+    "execMap": {
+        "ts": "node --inspect=0.0.0.0:9229 --nolazy -r ts-node/register"
     }
+}
 ```
 Onde os elemntos chaves são:
 **watch** que indica quais arquivos o nodemon deve observar.
@@ -112,11 +112,11 @@ E a opção **ts** no **execMap** que conta como o nodemon deve tratar arquivos 
 
 - Agora adicionamos scripts ao package.json que utilizam nodemon para iniciar o projeto. Adicione o seguinte trecho de código:
 ```JSON
-    "scripts": {
-        "start": "NODE_PATH=./build node build/index.js",
-        "build": "tsc -p .",
-        "dev": "nodemon src/index.ts",
-    }
+"scripts": {
+    "start": "NODE_PATH=./build node build/index.js",
+    "build": "tsc -p .",
+    "dev": "nodemon src/index.ts",
+}
 ```
 Aqui o comando **dev** irá iniciar o projeto com nodemon. 
 
@@ -138,15 +138,15 @@ Para a realização deste passo, é necessário que o Docker já esteja instalad
 - Agora vamos adicionar um *Dockerfile* ao diretório raiz do nosso projeto e acrescentar o seguinte trecho de código:
 
 ```DOCKERFILE
-    FROM node:14 as base
+FROM node:14 as base
 
-    WORKDIR /home/node/app
+WORKDIR /home/node/app
 
-    COPY package*.json ./
+COPY package*.json ./
 
-    RUN npm i
+RUN npm i
 
-    COPY . .
+COPY . .
 ```
 O que esse código faz é o seguinte:
 - Conta qual a imagem de container será utilizada. (Ver lista completa de imagens <a href = "https://hub.docker.com/search?type=image">aqui</a>)
@@ -158,34 +158,34 @@ O que esse código faz é o seguinte:
 Opcionalmente para executar o passo de Produção no mesmo arquivo acrescente o seguinte trecho:
 
 ```DOCKERFILE
-    FROM base as production
+FROM base as production
 
-    ENV NODE_PATH=./build
+ENV NODE_PATH=./build
 
-    RUN npm run build
+RUN npm run build
 ```
 
 Note que não foi adicionado nenhum comando para executar a build de desenvolvimento ou produção, é para isso que serve o arquivo *docker-compose*.
 
 - Crie a na raiz do diretório o arquivo *docker-compose.yml* e adicione o seguinte:
 ```yml
-    version: '3.7'
+version: '3.7'
 
-    services:
-    ts-node-docker:
-        build:
-        context: .
-        dockerfile: Dockerfile
-        target: base
-        volumes:
-        - ./src:/home/node/app/src
-        - ./nodemon.json:/home/node/app/nodemon.json
-        container_name: ts-node-docker
-        expose:
-        - '4000'
-        ports:
-        - '4000:4000'
-        command: npm run dev
+services:
+ts-node-docker:
+    build:
+    context: .
+    dockerfile: Dockerfile
+    target: base
+    volumes:
+    - ./src:/home/node/app/src
+    - ./nodemon.json:/home/node/app/nodemon.json
+    container_name: ts-node-docker
+    expose:
+    - '4000'
+    ports:
+    - '4000:4000'
+    command: npm run dev
 ```
 Isso cria um container chamado **ts-node-docker**, executa o *Dockerfile* criado e executa a build (veja o **target**).
 
@@ -196,28 +196,28 @@ E finalmente, ele mapeia a porta (port) da máquina para o docker container (dev
 
 - Com isso é possível finalmente fazer build da imagem docker com:
 ```console
-    docker-compose build
+docker-compose build
 ```
 
 - E finalmente executar o container com o comando:
 ```console
-    docker-compose up -d
+docker-compose up -d
 ```
 **Obs:** *-d* Modo desacoplado: Execute containers no fundo, imprima novos nomes de containers.
 Agora já se tem um container que observa quaisquer mudanças feitas no código fonte TypeScript. Recomenda-se bastante o uso do Docker Desktop app para ver containers em execução.
 
 - É possível parar o container tambem com:
 ```console
-    docker-compose down
+docker-compose down
 ```
 
 - Por fim para quem não gosta de ficar digitando todos esses comandos docker. Crie um **Makefile** na raiz do projeto e insira o seguintes comandos para serem executados da linha de comando:
 
 ```Makefile
-    up:
-        docker-compose up -d
-    down: 
-        docker-compose down
+up:
+    docker-compose up -d
+down: 
+    docker-compose down
 ```
 
 
